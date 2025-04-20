@@ -3,12 +3,16 @@ package main
 import (
 	"fmt"
 	"net"
+	"time"
 )
 
 func handleConnection(conn net.Conn) {
-	defer conn.Close()
-	buf := make([]byte, 1024)
+	defer func() {
+		fmt.Printf("Client disconnected: %s at %s\n", conn.RemoteAddr(), time.Now().Format(time.RFC1123))
+		conn.Close()
+	}()
 
+	buf := make([]byte, 1024)
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -38,6 +42,8 @@ func main() {
 			fmt.Println("Error accepting:", err)
 			continue
 		}
+
+		fmt.Printf("Client connected: %s at %s\n", conn.RemoteAddr(), time.Now().Format(time.RFC1123))
 		go handleConnection(conn)
 	}
 }
