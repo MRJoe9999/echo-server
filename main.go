@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	inactivityTimeout = 30 * time.Second // Timeout duration
-	maxMessageLength  = 1024             // Maximum allowed message length
+	inactivityTimeout = 30 * time.Second
+	maxMessageLength  = 1024
 )
 
 func handleConnection(conn net.Conn) {
 	defer func() {
-		// Log disconnection
+
 		fmt.Printf("Client disconnected: %s at %s\n", conn.RemoteAddr(), time.Now().Format(time.RFC1123))
 		conn.Close()
 	}()
@@ -35,11 +35,9 @@ func handleConnection(conn net.Conn) {
 
 	reader := bufio.NewReader(conn)
 
-	// Create a channel to handle disconnection after timeout
 	inactivityTimer := time.NewTimer(inactivityTimeout)
 	defer inactivityTimer.Stop()
 
-	// Goroutine to handle inactivity timeout
 	go func() {
 		<-inactivityTimer.C
 		fmt.Printf("Inactivity timeout reached for client: %s\n", conn.RemoteAddr())
@@ -57,25 +55,19 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-		// Reset the inactivity timer whenever we get a message
 		inactivityTimer.Reset(inactivityTimeout)
 
-		// Check the length of the message and handle long messages
 		if len(message) > maxMessageLength {
 			fmt.Printf("Received long message from %s (more than %d bytes). Rejecting or truncating.\n", conn.RemoteAddr(), maxMessageLength)
 
-			// Option 1: Reject the message (send a message back saying it's too long)
 			_, err = conn.Write([]byte("Message too long. Maximum allowed length is 1024 bytes.\n"))
 			if err != nil {
 				fmt.Printf("Error writing to %s: %v\n", conn.RemoteAddr(), err)
 			}
 			continue // Skip further processing
 
-			// Option 2: Truncate the message (uncomment the next line if you want truncation instead of rejection)
-			// message = message[:maxMessageLength] // Truncate the message
 		}
 
-		// Trim the message
 		trimmed := strings.TrimSpace(message)
 		switch strings.ToLower(trimmed) {
 		case "hello":
@@ -106,7 +98,7 @@ func handleConnection(conn net.Conn) {
 				return
 			case "/echo":
 				if len(fields) > 1 {
-					// Reconstruct message without /echo
+
 					echoMsg := strings.Join(fields[1:], " ")
 					conn.Write([]byte(echoMsg + "\n"))
 				} else {
@@ -117,7 +109,7 @@ func handleConnection(conn net.Conn) {
 			}
 			continue
 		}
-		// Log the message with a timestamp
+
 		timestamp := time.Now().Format(time.RFC1123)
 		logMessage := fmt.Sprintf("[%s] %s\n", timestamp, trimmed)
 		_, err = logFile.WriteString(logMessage)
@@ -126,7 +118,6 @@ func handleConnection(conn net.Conn) {
 			return
 		}
 
-		// Echo back clean message
 		fmt.Printf("Received from %s: %q\n", conn.RemoteAddr(), trimmed)
 		_, err = conn.Write([]byte(trimmed + "\n"))
 		if err != nil {
@@ -140,7 +131,7 @@ func main() {
 
 	port := flag.String("port", "4000", "Port number to listen on")
 	flag.Parse()
-	// define the target host and port we want to connect to
+
 	listener, err := net.Listen("tcp", ":"+*port)
 	if err != nil {
 		panic(err)
