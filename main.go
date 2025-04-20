@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -12,17 +14,35 @@ func handleConnection(conn net.Conn) {
 		conn.Close()
 	}()
 
-	buf := make([]byte, 1024)
+	fmt.Printf("Client connected: %s at %s\n", conn.RemoteAddr(), time.Now().Format(time.RFC1123))
+
+	reader := bufio.NewReader(conn)
+
 	for {
-		n, err := conn.Read(buf)
+		message, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Println("Error reading from client:", err)
+			if err.Error() == "EOF" {
+				fmt.Printf("Client closed the connection: %s\n", conn.RemoteAddr())
+			} else {
+				fmt.Printf("Error reading from %s: %v\n", conn.RemoteAddr(), err)
+			}
 			return
 		}
 
-		_, err = conn.Write(buf[:n])
+		// Trim the message
+		trimmed := strings.TrimSpace(message)
+		if trimmed == "" {
+			fmt.Printf("Received empty/whitespace message from %s\n", conn.RemoteAddr())
+			continue
+		}
+
+		fmt.Printf("Received from %s: %q\n", conn.RemoteAddr(), trimmed)
+
+		// Echo back clean message
+		_, err = conn.Write([]byte(trimmed + "\n"))
 		if err != nil {
-			fmt.Println("Error writing to client:", err)
+			fmt.Printf("Error writing to %s: %v\n", conn.RemoteAddr(), err)
+			return
 		}
 	}
 }
@@ -43,7 +63,6 @@ func main() {
 			continue
 		}
 
-		fmt.Printf("Client connected: %s at %s\n", conn.RemoteAddr(), time.Now().Format(time.RFC1123))
 		go handleConnection(conn)
 	}
 }
