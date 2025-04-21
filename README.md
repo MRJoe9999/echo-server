@@ -9,3 +9,11 @@
 ``` /quit ``` or ```bye```
 
 
+# Educational enrichment
+1. The funcationality that was educational enriched is the logging and log out clients along with the command example the ``` /time ``` ```/bye``` ```quit```
+
+# Reaserch needed
+1. The inactivity timeout feature. 
+
+# Youtube link
+https://youtu.be/XWZPBsOzTSg
